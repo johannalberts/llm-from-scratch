@@ -1,5 +1,5 @@
 import re
-
+import tiktoken
 
 class SimpleTokenizerV2:
     def __init__(self, vocab):
@@ -21,6 +21,21 @@ class SimpleTokenizerV2:
         text = " ".join([self.int_to_str[i] for i in ids])
 
         text = re.sub(r'\s+([,.:;?!"()\'])', r'\1', text)    #2
+        return text
+
+
+class TiktokenTokenizer:
+    def __init__(self):
+        self.tokenizer = tiktoken.get_encoding("gpt2")
+
+    def encode(self, text):
+        integers = self.tokenizer.encode(
+            text, allowed_special={"<|endoftext|>"}
+        )
+        return integers
+
+    def decode(self, ids):
+        text = self.tokenizer.decode(ids)
         return text
 
 
@@ -53,7 +68,25 @@ if __name__ == "__main__":
   data = load_data()
   preprocessed = regex_tokenize(data)
   vocab = create_vocab(preprocessed)
-  tokenizer = SimpleTokenizerV2(vocab)
-  ids = tokenizer.encode(data)
-  print(ids)
-  print(tokenizer.decode(ids))
+  # tokenizer = SimpleTokenizerV2(vocab)
+  tokenizer = TiktokenTokenizer()
+  enc_text = tokenizer.encode(data)
+  print(len(enc_text))
+
+  enc_sample = enc_text[50:]
+
+  context_size = 4
+  x = enc_sample[:context_size]
+  y = enc_sample[1:context_size+1]
+  print(f"x: {x}")
+  print(f"y:      {y}")
+
+  for i in range(1, context_size+1):
+    context = enc_sample[:i]
+    desired = enc_sample[i]
+    print(context, "---->", desired)
+  
+  for i in range(1, context_size+1):
+    context = enc_sample[:i]
+    desired = enc_sample[i]
+    print(tokenizer.decode(context), "---->", tokenizer.decode([desired]))
