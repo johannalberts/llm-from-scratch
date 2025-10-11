@@ -4,6 +4,7 @@ import tiktoken
 
 from config.gpt_config import GPT_CONFIG_124M
 
+
 class DummyGPTModel(nn.Module):
     def __init__(self, cfg):
         super().__init__()
@@ -32,12 +33,14 @@ class DummyGPTModel(nn.Module):
         logits = self.out_head(x)
         return logits
 
+
 class DummyTransformerBlock(nn.Module):    # A simple placeholder class that will be replaced by a real TransformerBlock later
     def __init__(self, cfg):
         super().__init__()
 
     def forward(self, x):     # This block does nothing and just returns its input
         return x
+
 
 class DummyLayerNorm(nn.Module):           # A simple placeholder class that will be replaced by a real LayerNorm later
     def __init__(self, normalized_shape, eps=1e-5):    # The parameters here are just to mimic the LayerNorm interface
@@ -47,19 +50,57 @@ class DummyLayerNorm(nn.Module):           # A simple placeholder class that wil
         return x
 
 
+class LayerNorm(nn.Module):
+    def __init__(self, emb_dim):
+        super().__init__()
+        self.eps = 1e-5
+        self.scale = nn.Parameter(torch.ones(emb_dim))
+        self.shift = nn.Parameter(torch.zeros(emb_dim))
+
+    def forward(self, x):
+        mean = x.mean(dim=-1, keepdim=True)
+        var = x.var(dim=-1, keepdim=True, unbiased=False)
+        norm_x = (x - mean) / torch.sqrt(var + self.eps)
+        return self.scale * norm_x + self.shift
+
+
 if __name__ == "__main__":
     torch.manual_seed(123)
-    tokenizer = tiktoken.get_encoding("gpt2")
-    batch = []
-    txt1 = "Every effort moves you"
-    txt2 = "Every day holds a"
+    # tokenizer = tiktoken.get_encoding("gpt2")
+    # batch = []
+    # txt1 = "Every effort moves you"
+    # txt2 = "Every day holds a"
 
-    batch.append(torch.tensor(tokenizer.encode(txt1)))
-    batch.append(torch.tensor(tokenizer.encode(txt2)))
-    batch = torch.stack(batch, dim=0)
-    print(batch)
+    # batch.append(torch.tensor(tokenizer.encode(txt1)))
+    # batch.append(torch.tensor(tokenizer.encode(txt2)))
+    # batch = torch.stack(batch, dim=0)
+    # print(batch)
 
-    model = DummyGPTModel(GPT_CONFIG_124M)
-    logits = model(batch)
-    print("Output shape:", logits.shape)
-    print(logits)
+    # model = DummyGPTModel(GPT_CONFIG_124M)
+    # logits = model(batch)
+    # print("Output shape:", logits.shape)
+    # print(logits)
+
+    batch_example = torch.randn(2, 5)     #1
+    layer = nn.Sequential(nn.Linear(5, 6), nn.ReLU())
+    out = layer(batch_example)
+    print(out)
+
+    mean = out.mean(dim=-1, keepdim=True)
+    var = out.var(dim=-1, keepdim=True)
+    print("Mean:\n", mean)
+    print("Variance:\n", var)
+
+    out_norm = (out - mean) / torch.sqrt(var)
+    mean = out_norm.mean(dim=-1, keepdim=True)
+    var = out_norm.var(dim=-1, keepdim=True)
+    print("Normalized layer outputs:\n", out_norm)
+    print("Mean:\n", mean)
+    print("Variance:\n", var)
+
+    # Turn off scientific notation for clarity and to display 0 as 0
+    torch.set_printoptions(sci_mode=False)
+    print(torch.zeros(1))
+    print('Scientific notation turned off:')
+    print("Mean:\n", mean)
+    print("Variance:\n", var)
